@@ -14,10 +14,10 @@ int main()
     cout << test1.to_us() << "us + " << test2.to_us() << "us = " << (test1 + test2).to_us() << "us" << endl;
 
     MClock test3;
-    for(int32_t i = 0; i < 0xFFFFFFF; ++i);
-    cout << test3.get().to_us() << "us" << endl;
+    while(test3.get().to_s() < 1);
+    cout << test3.get().to_ms() << "ms" << endl;
 
     cout << "running time :" << test4.get().to_us() << "us" << endl;
-    system("PAUSE");
+    //system("PAUSE");
     return 0;
 }

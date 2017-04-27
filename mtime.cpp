@@ -12,6 +12,24 @@
 /// general functions
 #if defined(WINDOWS)
 #include <windows.h>
+#include <mutex>
+std::mutex oldWin; // check getNow function for its usage
+
+class Lock // check getNow function for its usage
+{
+    public:
+        Lock(std::mutex& mutex): m(mutex)
+        {
+            m.lock();
+        }
+        ~Lock()
+        {
+            m.unlock();
+        }
+    private:
+        std::mutex& m;
+};
+
 LARGE_INTEGER _getF_() // used for initialization only
 {
     LARGE_INTEGER f;
@@ -19,16 +37,19 @@ LARGE_INTEGER _getF_() // used for initialization only
     return f;
 }
 
+bool isWindowsXp() // return true on windows xp
+{
+    return static_cast<DWORD>(LOBYTE(LOWORD(GetVersion()))) < 6;
+}
+
 MTime getNow()
 {
-    HANDLE cThread = GetCurrentThread();
-    DWORD_PTR pMask = SetThreadAffinityMask(cThread, 1);
-
     static LARGE_INTEGER f = _getF_(); // constant
 
+    static bool oldWindows = isWindowsXp();
     LARGE_INTEGER t;
+    if(oldWindows) Lock lock(oldWin); // lock the mutex on winXP. Will be unlocked at the end of the function
     QueryPerformanceCounter(&t);
-    SetThreadAffinityMask(cThread, pMask);
     return MTime::us2time(1000000 * t.QuadPart / f.QuadPart);
 }
 #elif defined(LINUX)
