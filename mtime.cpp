@@ -12,13 +12,36 @@
 /// general functions
 #if defined(WINDOWS)
 #include <windows.h>
-#include <mutex>
-std::mutex oldWin; // check getNow function for its usage
 
-class Lock // check getNow function for its usage
+class winMutex // SFML 2.4.2 windows mutex
 {
     public:
-        Lock(std::mutex& mutex): m(mutex)
+        winMutex()
+        {
+            InitializeCriticalSection(&mutex);
+        }
+        ~winMutex()
+        {
+            DeleteCriticalSection(&mutex);
+        }
+        void lock()
+        {
+            EnterCriticalSection(&mutex);
+        }
+        void unlock()
+        {
+            LeaveCriticalSection(&mutex);
+        }
+
+    private:
+        CRITICAL_SECTION mutex; // Win32 handle
+};
+winMutex oldWin; // is used in getNow() function on windows
+
+class Lock
+{
+    public:
+        Lock(winMutex& mutex): m(mutex)
         {
             m.lock();
         }
@@ -27,7 +50,7 @@ class Lock // check getNow function for its usage
             m.unlock();
         }
     private:
-        std::mutex& m;
+        winMutex& m;
 };
 
 LARGE_INTEGER _getF_() // used for initialization only
@@ -54,7 +77,7 @@ MTime getNow()
 }
 #elif defined(LINUX)
 #include <time.h>
-MTime getNow() // need testing
+MTime getNow()
 {
     // POSIX implementation
     timespec time;
@@ -63,7 +86,7 @@ MTime getNow() // need testing
 }
 #elif defined(MAC)
 #include <mach/mach_time.h>
-MTime getNow() // need testing
+MTime getNow()
 {
     // Mac OS X implementation
     static mach_timebase_info_data_t frequency = {0, 0};
